@@ -1,0 +1,436 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music player</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <div class="player">
+    <!-- Dashboard -->
+    <div class="dashboard">
+      <!-- Header -->
+      <label class="darkmode_toggle">
+        <input class="toggle_checked" type="checkbox">
+        <span class="slider round"></span>
+      </label>
+      <header>
+        <h4>Now playing:</h4>
+        <h2 class="title">String 57th & 9th</h2>
+      </header>
+  
+      <!-- CD -->
+      <div class="cd-inner">
+        <div class="cd" style="width: 200px; opacity: 1;">
+          <div class="cd-thumb" style="background-image: url('https://i.ytimg.com/vi/jTLhQf5KJSc/maxresdefault.jpg')">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Control -->
+      <div class="control">
+        <div class="btn btn-repeat">
+          <i class="fas fa-redo"></i>
+        </div>
+        <div class="btn btn-prev">
+          <i class="fas fa-step-backward"></i>
+        </div>
+        <div class="btn btn-toggle-play">
+          <i class="fas fa-pause icon-pause"></i>
+          <i class="fas fa-play icon-play"></i>
+        </div>
+        <div class="btn btn-next">
+          <i class="fas fa-step-forward"></i>
+        </div>
+        <div class="btn btn-random">
+          <i class="fas fa-random"></i>
+        </div>
+      </div>
+  
+      <input id="progress" class="progress" type="range" value="0" step="1" min="0" max="100">
+  
+      <audio id="audio" src=""></audio>
+    </div>
+  
+    <!-- Playlist -->
+    <div class="playlist">
+      
+    </div>
+  
+  <!-- Design from: https://static.collectui.com/shots/3671744/musicloud-revolutionary-app-for-music-streaming-large -->
+</body>
+
+<script>
+  /*
+    1. Render Song
+    2. Scroll top
+    3. Play / pause / seek
+    4. CD Rotate 
+    5. Next / Previous
+    6. Random 
+    7. Next / Repeat when ended
+    8. Active Song
+    9. Scroll active song into view
+    10. Play song when Click
+  */
+
+
+  const $ = document.querySelector.bind(document);
+  const $$ = document.querySelectorAll.bind(document);
+
+  const PLAYER_STORAGE_KEY = 'abc';
+
+  //Get Properties of song
+  const heading = $('header h2');
+  const cdThumb = $('.cd-thumb');
+  const audio = $('#audio');
+
+  const playBtn = $('.btn-toggle-play');
+  const getPlayerBtn = $('.player');
+
+  const progress = $('#progress');
+
+  const nextBtn = $('.btn-next');
+  const previousBtn = $('.btn-prev');
+
+  const randomBtn = $('.btn-random');
+
+  const repeatBtn = $('.btn-repeat');
+
+  const playlist = $('.playlist');
+
+  //Dark mode variable
+  const darkmodeBtn = $('.toggle_checked');
+  const dashboard_dark = $('.dashboard');
+  const h2_darkmode = $('.title')
+  const body_darkmode = $('body');
+
+  const cdInner = $('.cd-inner');
+  
+const app = {
+
+    currentIndex: 0, // get the first song in list and assign to default 
+    isPlaying: false,
+    isRandom: false,
+    isDarkMode: false,
+    config: JSON.parse(localStorage.getItem(PLAYER_STORAGE_KEY)) || {}, 
+    songs: [
+        {
+            name: "Take Me Home - Country Roads",
+            singer: "John Deaver",
+            path: "./assets/music/song1.m4a",
+            image: "./assets/img/song1.jpg"
+        },
+        {
+            name: "Today Is The Day",
+            singer: "John Deaver",
+            path: "./assets/music/song2.mp3",
+            image: "./assets/img/song2.jpg"
+        },
+        {
+            name: "Happy With Midnight",
+            singer: "John Deaver",
+            path: "./assets/music/song3.m4a",
+            image: "./assets/img/song3.jpg"
+        },
+        {
+            name: "Yurisa Cover",
+            singer: "Yurisa",
+            path: "./assets/music/song4.mp3",
+            image: "./assets/img/song4.jpg"
+        },
+        {
+            name: "Love Again",
+            singer: "John Deaver",
+            path: "./assets/music/song5.m4a",
+            image: "./assets/img/song5.jpg"
+        },
+        {
+            name: "Chrismas For Cowboy",
+            singer: "John Deaver",
+            path: "./assets/music/song6.m4a",
+            image: "./assets/img/song6.jpg"
+        },
+        {
+            name: "Back Home Again",
+            singer: "John Deaver",
+            path: "./assets/music/song7.m4a",
+            image: "./assets/img/song7.png"
+        },
+    ],
+    setConfig: function(key, value){
+      this.config[key] = value;
+      localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify(this.config));
+    },
+    render: function(){
+      const htmls = this.songs.map((song, index) => {
+        return  `
+          <div class="song ${index === this.currentIndex ? 'active' : ''}" data-index ="${index}">
+            <div class="thumb" style="background-image: url('${song.image}')">
+            </div>
+            <div class="body">
+              <h3 class="title">${song.name}</h3>
+              <p class="author">${song.singer}</p>
+            </div>
+            <div class="option">
+              <i class="fas fa-ellipsis-h"></i>
+            </div>
+          </div>
+        `
+      })
+      playlist.innerHTML = htmls.join('');
+    },
+
+    //Define Properties for song 
+    // Xem lại
+    defineProperties: function(){
+      Object.defineProperty(this, 'currentSong', {
+        get: function() {
+          return this.songs[this.currentIndex];
+        }
+      })
+    },
+
+    loadCurrentSong: function(){
+     
+      heading.textContent = this.currentSong.name;
+      cdThumb.style.backgroundImage = `url(${this.currentSong.image})`;
+      audio.src = this.currentSong.path;      
+    },
+
+    nextSong: function(){
+      this.currentIndex++;
+      if(this.currentIndex >= this.songs.length){
+        this.currentIndex = 0;
+      }
+
+      this.loadCurrentSong();
+    },
+
+    previousSong: function(){
+      this.currentIndex--;
+      if(this.currentIndex < 0){
+        this.currentIndex = this.songs.length - 1;
+      }
+
+      this.loadCurrentSong();
+    },
+    randomSong: function(){
+      let newIndex;
+
+      do {
+        newIndex = Math.floor(Math.random() * this.songs.length);
+      } while (newIndex == this.currentIndex) {
+        this.currentIndex = newIndex;
+      }
+    },
+    repeatSong: function(){
+      this.currentIndex;
+    },
+
+    //Handle reload config ( F5 ) 
+    loadConfig: function(){
+      this.isRandom = this.config.isRandom
+    },
+    scrollIntoView: function(){
+      setTimeout(() => {
+          $('.song.active').scrollIntoView({
+            behavior: 'smooth',
+            block: 'end'
+          })
+        }, 300)
+    },
+    //Handle Event
+    handleEvents: function(){
+      const _this = this;
+
+      const cd = $('.cd');
+      const cdWidth = cd.offsetWidth;
+
+      // Handle control turn around keyframe of CD 
+      // Return animate object
+      const cdThumbAnimate = cdThumb.animate([
+        { transform: 'rotate(360deg)'}
+      ], {
+        duration: 10000, // Turn around in 10 seconds
+        iterations: Infinity //Number you want to turn 
+      })
+
+      cdThumbAnimate.pause();
+
+      //Handle cd-inner 
+      const cd_inner = $('.cd-inner');
+      
+      //Handle scroll with cd image 
+      document.onscroll = function(){
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const newCdWidth = cdWidth - scrollTop;
+
+        cd.style.width = newCdWidth - 20 + 'px';
+        cd.style.opacity = newCdWidth / cdWidth; //Set opacity for cd
+      }
+
+      //Handle toggle darkmode 
+      darkmodeBtn.onclick = function(){
+        _this.isDarkMode = !_this.isDarkMode;
+          if(_this.isDarkMode){
+            setTimeout(function(){
+            dashboard_dark.classList.add('darkmode');
+            h2_darkmode.classList.add('h2_darkmode');
+            playlist.classList.add('darkmode');
+            body_darkmode.classList.add('darkmode');
+          }, 200)
+        } else {
+            dashboard_dark.classList.remove('darkmode');
+            h2_darkmode.classList.remove('h2_darkmode');
+            playlist.classList.remove('darkmode');
+            body_darkmode.classList.remove('darkmode');
+        }
+      }
+
+      //Handle click play
+      playBtn.onclick = function(){
+        if ( _this.isPlaying ){
+          audio.pause();  
+        } else {
+          audio.play();
+        }
+      }
+
+      //When song played
+      audio.onplay = function(){
+        _this.isPlaying = true;
+        getPlayerBtn.classList.add('playing');
+        cdThumbAnimate.play();
+        cdInner.classList.add('active');
+      }
+
+      //When song paused
+      audio.onpause = function(){
+        _this.isPlaying = false;
+        getPlayerBtn.classList.remove('playing');
+        cdThumbAnimate.pause();
+        cdInner.classList.remove('active');
+
+      }
+
+      //When skip 
+      audio.ontimeupdate = function(){
+        if(audio.duration) {
+          const progressPercent = Math.floor(audio.currentTime / audio.duration * 100);
+          progress.value = progressPercent;
+        }
+      }
+
+      //When Tua =))) 
+      progress.oninput = function(e){
+        const seekTime = (audio.duration / 100 * e.target.value);
+        audio.currentTime = seekTime;
+      }
+
+      //Handle click next song
+      nextBtn.onclick = function(){
+        if( _this.isRandom){
+          _this.randomSong();
+          _this.loadCurrentSong();
+        } else {
+          _this.nextSong();
+        }
+        audio.play();
+        _this.render();
+        _this.scrollIntoView();
+      }
+
+      //Handle click previous song 
+      previousBtn.onclick = function(){
+        if( _this.isRandom){
+          _this.randomSong();
+          _this.loadCurrentSong();
+        } else {
+          _this.previousSong();
+        }
+        audio.play();
+        _this.render();
+        _this.scrollIntoView();
+      }
+
+      //Handle click random btn
+      randomBtn.onclick = function(){
+        _this.isRandom = !_this.isRandom;
+        _this.setConfig('isRandom', _this.isRandom); 
+        randomBtn.classList.toggle('active', _this.isRandom);
+        _this.randomSong();
+      }
+
+      //Handle when ended songs
+      audio.onended = function(){
+        if(_this.isRepeat) {
+          _this.repeatSong();
+          _this.loadCurrentSong();
+        } else {
+          nextBtn.click();
+        }
+        audio.play();
+      }
+
+      //Handle when click repeat
+      repeatBtn.onclick = function(){
+        _this.isRepeat = !_this.isRepeat;
+        repeatBtn.classList.toggle('active', _this.isRepeat);
+        _this.repeatSong();
+      }
+      
+      //Handle when click any song
+      playlist.onclick = function(e){
+        const songNode = e.target.closest('.song:not(.active)');
+
+        if(songNode || e.target.closest('.option')) {
+          if(songNode) {
+            _this.currentIndex = Number(songNode.dataset.index)
+            _this.loadCurrentSong();
+            _this.render();
+            audio.play();
+          }
+          
+        }
+        
+      }
+    },
+
+    start: function() {
+
+      this.loadConfig();
+
+      //Define Properties for object
+      this.defineProperties();
+
+      //Listen and handle event 
+      this.handleEvents();
+
+      //Load infomation of default song to UI 
+      this.loadCurrentSong();
+
+      //Render playlist
+      this.render();
+
+      randomBtn.classList.toggle('active', this.isRandom);
+    }
+  }
+
+  app.start();
+</script>
+</html>
+
+
+
+
+
+
+<!-- Bug handle random song  -->
+<!-- 1. Click random song 
+2. Vẫn còn bị dính current index random 1 phát rồi mới hoàn toàn đúng logic -->

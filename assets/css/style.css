@@ -73,7 +73,7 @@
   }
 
   .cd-inner{
-    background: url(/assets/img/soundwave.png) no-repeat center/contain;
+    background: url(./assets/img/soundwave.png) no-repeat center/contain;
     z-index: -1;
     margin-bottom: 10px;
   }
